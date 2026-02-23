@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb2602fde82469b469b550590219529a, type: 3}
+  m_Name: Basic Lake
+  m_EditorClassIdentifier: Assembly-CSharp::FishingPool
+  poolID: Lake_001
+  availableItems:
+  - {fileID: 11400000, guid: 85ba01fb3d97acf42b650428d6771004, type: 2}
+  - {fileID: 11400000, guid: 8f2e7954a63e48d459e3af3de9845989, type: 2}
+  - {fileID: 11400000, guid: 1d95ee292420b004993c5c0ed0dc9024, type: 2}
+  - {fileID: 11400000, guid: f65d2b7f29aa9f845a941db825873e64, type: 2}
+  - {fileID: 11400000, guid: 61c30011a3468ad4293d872462151297, type: 2}
+  - {fileID: 11400000, guid: 814c0df36fcfb2d45baa6e77c0331f77, type: 2}
+  - {fileID: 11400000, guid: 156ced04308deaf4ba1377c514e5bab5, type: 2}
+  - {fileID: 11400000, guid: c712a9b0007077140ad106956ebb53ce, type: 2}
+  - {fileID: 11400000, guid: fb156e64615a30f4e9e0ea16552bd6d0, type: 2}
+  - {fileID: 11400000, guid: 6e9a1fe9e38cfe248aaa0264038c9f95, type: 2}
+  - {fileID: 11400000, guid: cc4af797bbbb094409f1fa245f7013a6, type: 2}
+  - {fileID: 11400000, guid: 33b2d80a795fb6f4ebb10c01e448a850, type: 2}
+  - {fileID: 11400000, guid: 15c5ce9a1a2c1e74fb4468f9da47fc80, type: 2}
+  - {fileID: 11400000, guid: 7a23dc53048004d44ae4fbf6508ebffc, type: 2}
+  - {fileID: 11400000, guid: b2afff63fbc7447419f032e44836d7b9, type: 2}
+  - {fileID: 11400000, guid: 8850af181d958284784adacf510b5ddf, type: 2}
+  - {fileID: 11400000, guid: f7ed42e29329b7c4aba395008c11da7c, type: 2}
+  - {fileID: 11400000, guid: 7e02ae03c97e11746bb01299f64d3d56, type: 2}
+  - {fileID: 11400000, guid: d1351ff363db2a64fa62ca2bd537b92a, type: 2}
+  - {fileID: 11400000, guid: 4788f63644ac87f45891aa3f5fd40c39, type: 2}
+  - {fileID: 11400000, guid: d3246cf164876334ebbbdcedb35c8702, type: 2}
+  - {fileID: 11400000, guid: 6c8828e1fe488f142b065a61b4295410, type: 2}
+  - {fileID: 11400000, guid: 6d3fb3bf485543a4da35ff5e0d73124f, type: 2}
+  - {fileID: 11400000, guid: 2dc15694cffb1de4e911507bdc53f29d, type: 2}
+  - {fileID: 11400000, guid: c443ac39e10fccb48b4386c1cd1c8691, type: 2}
+  - {fileID: 11400000, guid: 6f0980a2bb61cae41ad29acf2457af90, type: 2}
+  - {fileID: 11400000, guid: f1c4ba68f18afce48a5cb4eaa0138ea8, type: 2}
+  - {fileID: 11400000, guid: a0abf1dfea6c219498be967d94d096fb, type: 2}
+  - {fileID: 11400000, guid: d4e7b270348e8c44fb67180879791b8b, type: 2}
+  - {fileID: 11400000, guid: 39de6c244577cb345b0b808006b84d98, type: 2}
+  - {fileID: 11400000, guid: 6165cd578761f5c48a40f60e0771294c, type: 2}
+  - {fileID: 11400000, guid: ede63ef2fd5ff1e4e82dfc1a636baad4, type: 2}
+  - {fileID: 11400000, guid: 903f0175588522143989849aa94de020, type: 2}
+  - {fileID: 11400000, guid: d24ef2684b504974d90f5d367f825f12, type: 2}
+  commonWeight: 60
+  uncommonWeight: 30
+  rareWeight: 7.5
+  extraordinaryWeight: 2
+  maxFishingDistance: 100
+  startingFishingDistance: 50

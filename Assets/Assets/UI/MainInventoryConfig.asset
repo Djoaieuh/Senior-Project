@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dea6fd40d7c61724187bbdd864225027, type: 3}
+  m_Name: MainInventoryConfig
+  m_EditorClassIdentifier: Assembly-CSharp::InventoryVisualConfig
+  cellWidth: 80
+  cellHeight: 80
+  cellSpacing: 10
+  maxItemsPerRow: 7
+  emptyCellBackground: {fileID: 21300000, guid: 142b669a7131b644aba9923af30578ff, type: 3}
+  occupiedCellBackground: {fileID: 21300000, guid: 2e32abc1865a6c54faea5713cab44488, type: 3}
+  selectedBorder: {fileID: 21300000, guid: 0602646d0fa5c6a49893d0370ed1420c, type: 3}
+  equippedIcon: {fileID: 21300000, guid: 0602646d0fa5c6a49893d0370ed1420c, type: 3}
+  commonColor: {r: 0.8, g: 0.8, b: 0.8, a: 1}
+  uncommonColor: {r: 0.3, g: 1, b: 0.3, a: 1}
+  rareColor: {r: 0.3, g: 0.5, b: 1, a: 1}
+  extraordinaryColor: {r: 0.8, g: 0.3, b: 1, a: 1}
+  mythicalColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+  quantityFont: {fileID: 0}
+  quantityFontSize: 14
+  quantityTextColor: {r: 1, g: 1, b: 1, a: 1}

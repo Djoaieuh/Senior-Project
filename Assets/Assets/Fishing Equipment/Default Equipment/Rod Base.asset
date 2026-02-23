@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d4fbc32103690246933680b498bb7ec, type: 3}
+  m_Name: Rod Base
+  m_EditorClassIdentifier: Assembly-CSharp::RodBase
+  rodID: Rod_base_001
+  rodName: Rod Base
+  rodIcon: {fileID: 21300000, guid: ccf73910710361f43833be9fb2489e9c, type: 3}
+  resistanceBonus: 10
+  lineStabilityBonus: 200
+  reelingPowerBonus: 10
+  greenZoneEnd: 30
+  redZoneStart: 70
+  luck: 250
+  description: 

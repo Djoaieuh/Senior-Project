@@ -1,0 +1,73 @@
+╔════════════════════════════════════════════════════════════════╗
+║           FISHING SIMULATION RESULTS                           ║
+╚════════════════════════════════════════════════════════════════╝
+
+Total Rolls: 200
+Pity System: ENABLED
+
+═══════════════════════════════════════════════════════════════
+RARITIES
+═══════════════════════════════════════════════════════════════
+Mythical        Caught:      3 | Expected:     1.40 (0.70%) | Actual: 1.50% | Deviation: +114.29%
+Extraordinary   Caught:      7 | Expected:     6.00 (3.00%) | Actual: 3.50% | Deviation: +16.67%
+Rare            Caught:     18 | Expected:    20.00 (10.00%) | Actual: 9.00% | Deviation: -10.00%
+Uncommon        Caught:    100 | Expected:   100.00 (50.00%) | Actual: 50.00% | Deviation:  +0.00%
+Common          Caught:     72 | Expected:    72.60 (36.30%) | Actual: 36.00% | Deviation:  -0.83%
+
+═══════════════════════════════════════════════════════════════
+ITEM TYPES
+═══════════════════════════════════════════════════════════════
+Fish            Caught:    112 | Expected:   108.89 (54.45%) | Actual: 56.00% | Deviation:  +2.85%
+Magical         Caught:     27 | Expected:    26.45 (13.23%) | Actual: 13.50% | Deviation:  +2.06%
+Metal           Caught:     55 | Expected:    52.88 (26.44%) | Actual: 27.50% | Deviation:  +4.00%
+Plant           Caught:     85 | Expected:    84.71 (42.35%) | Actual: 42.50% | Deviation:  +0.34%
+
+═══════════════════════════════════════════════════════════════
+ITEMS (by Rarity)
+═══════════════════════════════════════════════════════════════
+
+--- Mythical ---
+  Celestial Alloy Carp           Caught:      1 | Expected:     0.22 (0.1105%) | Deviation: +352.38%
+  Crown of Living Reeds          Caught:      0 | Expected:     0.15 (0.0737%) | Deviation: -100.00%
+  Heartroot of the Lake          Caught:      1 | Expected:     0.29 (0.1474%) | Deviation: +239.29%
+  Philosopher's Koi              Caught:      0 | Expected:     0.15 (0.0737%) | Deviation: -100.00%
+  Time-Lost Tadpole              Caught:      0 | Expected:     0.37 (0.1842%) | Deviation: -100.00%
+  Worldshard Leviathan Fragment  Caught:      1 | Expected:     0.22 (0.1105%) | Deviation: +352.38%
+
+--- Extraordinary ---
+  Abyss Lanterfish               Caught:      0 | Expected:     1.00 (0.5000%) | Deviation: -100.00%
+  Living Ironweed                Caught:      0 | Expected:     0.86 (0.4286%) | Deviation: -100.00%
+  Runed Driftwood                Caught:      2 | Expected:     1.29 (0.6429%) | Deviation: +55.56%
+  Soulbound Kelp                 Caught:      1 | Expected:     0.86 (0.4286%) | Deviation: +16.67%
+  Starfall Salmon                Caught:      2 | Expected:     1.14 (0.5714%) | Deviation: +75.00%
+  Voidscale Sturgeon             Caught:      2 | Expected:     0.86 (0.4286%) | Deviation: +133.33%
+
+--- Rare ---
+  Blacksteel Catfish             Caught:      1 | Expected:     2.28 (1.1392%) | Deviation: -56.11%
+  Gilded Koi                     Caught:      6 | Expected:     3.80 (1.8987%) | Deviation: +58.00%
+  Mercury Carp                   Caught:      2 | Expected:     2.03 (1.0127%) | Deviation:  -1.25%
+  Phantom Guppy                  Caught:      2 | Expected:     2.78 (1.3924%) | Deviation: -28.18%
+  Singing Reed                   Caught:      3 | Expected:     3.54 (1.7722%) | Deviation: -15.36%
+  Storm Eel                      Caught:      2 | Expected:     2.53 (1.2658%) | Deviation: -21.00%
+  Withroot Vine                  Caught:      2 | Expected:     3.04 (1.5190%) | Deviation: -34.17%
+
+--- Uncommon ---
+  Bent Iron Hook                 Caught:     21 | Expected:    21.21 (10.6061%) | Deviation:  -1.00%
+  Cooper Pike                    Caught:     14 | Expected:    12.12 (6.0606%) | Deviation: +15.50%
+  Eacho Algae                    Caught:     11 | Expected:     9.09 (4.5455%) | Deviation: +21.00%
+  Glassscale Darter              Caught:     10 | Expected:    10.91 (5.4545%) | Deviation:  -8.33%
+  Moonfin                        Caught:     14 | Expected:    15.15 (7.5758%) | Deviation:  -7.60%
+  Mossback Turtlefish            Caught:     14 | Expected:    13.33 (6.6667%) | Deviation:  +5.00%
+  Thorned Lily                   Caught:     16 | Expected:    18.18 (9.0909%) | Deviation: -12.00%
+
+--- Common ---
+  Drift Kelp                     Caught:     11 | Expected:    11.85 (5.9265%) | Deviation:  -7.20%
+  Mud Perch                      Caught:      9 | Expected:    10.37 (5.1857%) | Deviation: -13.22%
+  Pebble Crab                    Caught:      5 | Expected:     5.93 (2.9633%) | Deviation: -15.63%
+  Reed Carp                      Caught:     11 | Expected:     8.89 (4.4449%) | Deviation: +23.74%
+  Rusted Nail                    Caught:      7 | Expected:     7.41 (3.7041%) | Deviation:  -5.51%
+  Silver Minnow                  Caught:     13 | Expected:    11.85 (5.9265%) | Deviation:  +9.68%
+  Tin Scale Fish                 Caught:      3 | Expected:     2.96 (1.4816%) | Deviation:  +1.24%
+  Water Lettuce                  Caught:     13 | Expected:    13.33 (6.6673%) | Deviation:  -2.51%
+
+═══════════════════════════════════════════════════════════════
