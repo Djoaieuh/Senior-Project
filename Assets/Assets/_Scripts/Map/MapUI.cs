@@ -14,13 +14,10 @@ public class MapUI : MonoBehaviour
     // ============================================
 
     [Header("Pins Container")]
-    [Tooltip("The parent GameObject that contains all MapPin children")]
     [SerializeField] private Transform pinsContainer;
 
     [Header("Location Info Panel")]
-    [Tooltip("The panel shown when a pin is clicked")]
     [SerializeField] private GameObject infoPanel;
-
     [SerializeField] private TextMeshProUGUI locationNameText;
     [SerializeField] private TextMeshProUGUI locationTypeText;
     [SerializeField] private TextMeshProUGUI descriptionText;
@@ -36,8 +33,11 @@ public class MapUI : MonoBehaviour
     [SerializeField] private Button closeMapButton;
 
     [Header("Current Location Indicator")]
-    [Tooltip("Text showing where the player currently is")]
     [SerializeField] private TextMeshProUGUI currentLocationText;
+
+    [Header("Navigation")]
+    [SerializeField] private MapNavigationController navigationController;
+    [SerializeField] private float openZoom = 2.0f;
 
     // ============================================
     // RUNTIME STATE
@@ -55,7 +55,6 @@ public class MapUI : MonoBehaviour
         DiscoverPins();
         SetupButtons();
 
-        // Start with info panel hidden
         if (infoPanel != null)
             infoPanel.SetActive(false);
     }
@@ -92,18 +91,14 @@ public class MapUI : MonoBehaviour
     // REFRESH
     // ============================================
 
-    /// <summary>
-    /// Called by MapManager when the map is opened - refreshes all pin visuals.
-    /// </summary>
     public void RefreshAll()
     {
         foreach (var pin in allPins)
             pin.Refresh();
 
         UpdateCurrentLocationText();
-
-        // Close info panel on re-open
         CloseInfoPanel();
+        FocusOnCurrentLocation();
     }
 
     private void UpdateCurrentLocationText()
@@ -113,7 +108,6 @@ public class MapUI : MonoBehaviour
         string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
         string locationName = "Unknown";
 
-        // Find which pin matches the current scene
         foreach (var pin in allPins)
         {
             if (pin.locationData != null && pin.locationData.sceneName == currentScene)
@@ -124,6 +118,26 @@ public class MapUI : MonoBehaviour
         }
 
         currentLocationText.text = $"Currently at: {locationName}";
+    }
+
+    private void FocusOnCurrentLocation()
+    {
+        if (navigationController == null) return;
+
+        string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+
+        foreach (var pin in allPins)
+        {
+            if (pin.locationData != null && pin.locationData.sceneName == currentScene)
+            {
+                Vector2 pinLocalPos = ((RectTransform)pin.transform).anchoredPosition;
+                navigationController.FocusOn(pinLocalPos, openZoom);
+                return;
+            }
+        }
+
+        // Fallback: center at default zoom if no matching pin found
+        navigationController.FocusOn(Vector2.zero, openZoom);
     }
 
     // ============================================
@@ -144,11 +158,9 @@ public class MapUI : MonoBehaviour
 
         MapData mapData = GameManager._instance?.Map;
 
-        // Name
         if (locationNameText != null)
             locationNameText.text = location.locationName;
 
-        // Type label
         if (locationTypeText != null)
         {
             locationTypeText.text = location.locationType switch
@@ -156,15 +168,13 @@ public class MapUI : MonoBehaviour
                 LocationType.FishingSpot => "⚓ Fishing Spot",
                 LocationType.Shop        => "🛒 Shop",
                 LocationType.Basic       => "💬 Location",
-                _ => ""
+                _                        => ""
             };
         }
 
-        // Description
         if (descriptionText != null)
             descriptionText.text = location.description;
 
-        // Preview image
         if (previewImage != null)
         {
             previewImage.gameObject.SetActive(location.previewImage != null);
@@ -172,7 +182,6 @@ public class MapUI : MonoBehaviour
                 previewImage.sprite = location.previewImage;
         }
 
-        // Requirements text
         if (requirementsText != null)
         {
             bool isUnlocked = mapData != null && location.IsUnlocked(mapData);
@@ -191,7 +200,6 @@ public class MapUI : MonoBehaviour
             }
         }
 
-        // Travel button
         UpdateTravelButton(location, mapData);
     }
 
@@ -199,16 +207,14 @@ public class MapUI : MonoBehaviour
     {
         if (travelButton == null) return;
 
-        bool isUnlocked  = mapData != null && location.IsUnlocked(mapData);
-        bool reqsMet     = mapData != null && location.AreRequirementsMet(mapData);
+        bool isUnlocked    = mapData != null && location.IsUnlocked(mapData);
+        bool reqsMet       = mapData != null && location.AreRequirementsMet(mapData);
         bool isCurrentScene = location.sceneName ==
             UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
 
-        // Button interactability
         bool canTravel = (isUnlocked || reqsMet) && !isCurrentScene;
         travelButton.interactable = canTravel;
 
-        // Button label
         if (travelButtonText != null)
         {
             if (isCurrentScene)
@@ -227,12 +233,11 @@ public class MapUI : MonoBehaviour
         LocationType.FishingSpot => "Travel",
         LocationType.Shop        => "Visit Shop",
         LocationType.Basic       => "Visit",
-        _ => "Go"
+        _                        => "Go"
     };
 
     private string GetUnlockLabel(LocationData location)
     {
-        // Show cost if there's a money requirement
         foreach (var req in location.unlockRequirements)
         {
             if (req.type == UnlockRequirementType.MoneyCost && req.moneyCost > 0)

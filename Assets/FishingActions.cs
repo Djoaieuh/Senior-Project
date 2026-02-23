@@ -208,6 +208,33 @@ public partial class @FishingActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""MapPoint"",
+                    ""type"": ""Value"",
+                    ""id"": ""6e830de2-523c-4318-910e-0009f995b38b"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""MapDrag"",
+                    ""type"": ""Button"",
+                    ""id"": ""838816aa-656e-432c-9b3b-33a7a186b961"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""MapZoom"",
+                    ""type"": ""Value"",
+                    ""id"": ""106b9874-a946-420f-9183-b8209fce521c"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
@@ -353,6 +380,39 @@ public partial class @FishingActions: IInputActionCollection2, IDisposable
                     ""action"": ""Open/Close Map"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""77afe94c-85be-41a3-bb27-6e4083d7ef70"",
+                    ""path"": ""<Mouse>/position"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MapPoint"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f5cb2bb2-81f4-4db8-834c-a1a31ebf764c"",
+                    ""path"": ""<Mouse>/leftButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MapDrag"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""9d8f35f1-29ff-44cf-badb-fe2c64c94510"",
+                    ""path"": ""<Mouse>/scroll"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MapZoom"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -374,6 +434,9 @@ public partial class @FishingActions: IInputActionCollection2, IDisposable
         m_PlayerInputs_ReelButton8 = m_PlayerInputs.FindAction("Reel Button 8", throwIfNotFound: true);
         m_PlayerInputs_OpenCloseInventory = m_PlayerInputs.FindAction("Open/Close Inventory", throwIfNotFound: true);
         m_PlayerInputs_OpenCloseMap = m_PlayerInputs.FindAction("Open/Close Map", throwIfNotFound: true);
+        m_PlayerInputs_MapPoint = m_PlayerInputs.FindAction("MapPoint", throwIfNotFound: true);
+        m_PlayerInputs_MapDrag = m_PlayerInputs.FindAction("MapDrag", throwIfNotFound: true);
+        m_PlayerInputs_MapZoom = m_PlayerInputs.FindAction("MapZoom", throwIfNotFound: true);
     }
 
     ~@FishingActions()
@@ -467,6 +530,9 @@ public partial class @FishingActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_PlayerInputs_ReelButton8;
     private readonly InputAction m_PlayerInputs_OpenCloseInventory;
     private readonly InputAction m_PlayerInputs_OpenCloseMap;
+    private readonly InputAction m_PlayerInputs_MapPoint;
+    private readonly InputAction m_PlayerInputs_MapDrag;
+    private readonly InputAction m_PlayerInputs_MapZoom;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player Inputs".
     /// </summary>
@@ -530,6 +596,18 @@ public partial class @FishingActions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "PlayerInputs/OpenCloseMap".
         /// </summary>
         public InputAction @OpenCloseMap => m_Wrapper.m_PlayerInputs_OpenCloseMap;
+        /// <summary>
+        /// Provides access to the underlying input action "PlayerInputs/MapPoint".
+        /// </summary>
+        public InputAction @MapPoint => m_Wrapper.m_PlayerInputs_MapPoint;
+        /// <summary>
+        /// Provides access to the underlying input action "PlayerInputs/MapDrag".
+        /// </summary>
+        public InputAction @MapDrag => m_Wrapper.m_PlayerInputs_MapDrag;
+        /// <summary>
+        /// Provides access to the underlying input action "PlayerInputs/MapZoom".
+        /// </summary>
+        public InputAction @MapZoom => m_Wrapper.m_PlayerInputs_MapZoom;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -595,6 +673,15 @@ public partial class @FishingActions: IInputActionCollection2, IDisposable
             @OpenCloseMap.started += instance.OnOpenCloseMap;
             @OpenCloseMap.performed += instance.OnOpenCloseMap;
             @OpenCloseMap.canceled += instance.OnOpenCloseMap;
+            @MapPoint.started += instance.OnMapPoint;
+            @MapPoint.performed += instance.OnMapPoint;
+            @MapPoint.canceled += instance.OnMapPoint;
+            @MapDrag.started += instance.OnMapDrag;
+            @MapDrag.performed += instance.OnMapDrag;
+            @MapDrag.canceled += instance.OnMapDrag;
+            @MapZoom.started += instance.OnMapZoom;
+            @MapZoom.performed += instance.OnMapZoom;
+            @MapZoom.canceled += instance.OnMapZoom;
         }
 
         /// <summary>
@@ -645,6 +732,15 @@ public partial class @FishingActions: IInputActionCollection2, IDisposable
             @OpenCloseMap.started -= instance.OnOpenCloseMap;
             @OpenCloseMap.performed -= instance.OnOpenCloseMap;
             @OpenCloseMap.canceled -= instance.OnOpenCloseMap;
+            @MapPoint.started -= instance.OnMapPoint;
+            @MapPoint.performed -= instance.OnMapPoint;
+            @MapPoint.canceled -= instance.OnMapPoint;
+            @MapDrag.started -= instance.OnMapDrag;
+            @MapDrag.performed -= instance.OnMapDrag;
+            @MapDrag.canceled -= instance.OnMapDrag;
+            @MapZoom.started -= instance.OnMapZoom;
+            @MapZoom.performed -= instance.OnMapZoom;
+            @MapZoom.canceled -= instance.OnMapZoom;
         }
 
         /// <summary>
@@ -776,5 +872,26 @@ public partial class @FishingActions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnOpenCloseMap(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "MapPoint" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnMapPoint(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "MapDrag" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnMapDrag(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "MapZoom" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnMapZoom(InputAction.CallbackContext context);
     }
 }
