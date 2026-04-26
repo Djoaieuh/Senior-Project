@@ -132,13 +132,13 @@ public class MapUI : MonoBehaviour
                 // Use the pin's anchored position inside MapContent as the focus target.
                 // DefaultOpenZoom is set on the controller in the inspector.
                 Vector2 pinLocalPos = ((RectTransform)pin.transform).anchoredPosition;
-                navigationController.FocusOn(pinLocalPos, navigationController.DefaultOpenZoom);
+                navigationController.FocusOn(pinLocalPos, navigationController.openZoom);
                 return;
             }
         }
 
         // Fallback: center with default zoom if no matching pin
-        navigationController.FocusOn(Vector2.zero, navigationController.DefaultOpenZoom);
+        navigationController.FocusOn(Vector2.zero, navigationController.openZoom);
     }
 
     // ══════════════════════════════════════════════════════════════════════

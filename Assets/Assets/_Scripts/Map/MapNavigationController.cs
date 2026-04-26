@@ -1,41 +1,58 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Collections;
 
+/// <summary>
+/// Handles map pan and zoom using the New Input System.
+/// Attach to the Viewport GameObject.
+/// </summary>
 public class MapNavigationController : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private RectTransform mapContent;
 
     [Header("Zoom Config")]
-    [SerializeField] private float maxZoom  = 4.0f;
-    [SerializeField] private float zoomStep = 0.2f;
+    [SerializeField] private float maxZoom  = 3.0f;
+    [SerializeField] private float zoomStep = 0.15f;
 
-    [Header("Default Open View")]
-    [SerializeField] private float defaultOpenZoom = 2.5f;
+    [Header("Initial View")]
+    [Tooltip("Zoom level applied when the map opens. " +
+             "NOTE: MapUI also has an openZoom field — that is the one actually passed " +
+             "to FocusOn() and controls the opening zoom. Keep both in sync.")]
+    [SerializeField] public float openZoom = 2.0f;
+
+    // ============================================
+    // RUNTIME
+    // ============================================
 
     private MapNavigator  navigator;
     private RectTransform viewportRect;
-    private Vector2       mapImageSize;
-    private float         computedMinZoom = 1f;
+    private Vector2       contentOriginalSize;
+    private bool          isInitialized = false;
 
-    private FishingActions inputActions;
-    private bool           isDragActive;
-
+    // Pending focus — applied in LateUpdate so the Canvas layout system
+    // does not overwrite the transform values we set in the same frame.
     private bool    hasPendingFocus;
     private Vector2 pendingFocusPoint;
     private float   pendingFocusZoom;
 
-    public float DefaultOpenZoom => defaultOpenZoom;
+    private FishingActions inputActions;
+    private bool           isDragActive;
 
-    // ══════════════════════════════════════════════════════════════════════
+    // ============================================
     // LIFECYCLE
-    // ══════════════════════════════════════════════════════════════════════
+    // ============================================
 
     private void Awake()
     {
         viewportRect = GetComponent<RectTransform>();
-        navigator    = new MapNavigator { MaxZoom = maxZoom, ZoomStep = zoomStep };
+
+        navigator = new MapNavigator
+        {
+            MinZoom  = 1f,
+            MaxZoom  = maxZoom,
+            ZoomStep = zoomStep
+        };
+
         inputActions = new FishingActions();
     }
 
@@ -52,91 +69,104 @@ public class MapNavigationController : MonoBehaviour
         inputActions.PlayerInputs.MapDrag.started   -= OnDragStarted;
         inputActions.PlayerInputs.MapDrag.canceled  -= OnDragCanceled;
         inputActions.PlayerInputs.MapZoom.performed -= OnZoom;
-        isDragActive    = false;
-        hasPendingFocus = false;
+        isDragActive = false;
     }
 
-    private void Update()
+    private void LateUpdate()
     {
+        // Apply pending focus here — LateUpdate runs after Unity's layout system
+        // has settled for this frame, so our values won't get overwritten.
+        if (hasPendingFocus)
+        {
+            hasPendingFocus = false;
+            ApplyFocusInternal(pendingFocusPoint, pendingFocusZoom);
+        }
+
         if (!isDragActive) return;
+
+        EnsureInitialized();
         navigator.UpdateDrag(GetPointerCanvasPosition());
-        navigator.ClampToBounds(viewportRect.rect.size, mapImageSize);
+        navigator.ClampToBounds(viewportRect.rect.size, contentOriginalSize);
         ApplyToRectTransform();
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // PUBLIC API
-    // ══════════════════════════════════════════════════════════════════════
+    // ============================================
+    // INITIALIZATION
+    // ============================================
 
+    private void TryInitializeSize()
+    {
+        if (isInitialized) return;
+        if (mapContent == null) return;
+
+        Canvas.ForceUpdateCanvases();
+
+        contentOriginalSize = mapContent.rect.size;
+
+        if (contentOriginalSize.sqrMagnitude < 0.01f)
+        {
+            Debug.LogWarning("[MapNav] mapContent rect size is still (0,0) after ForceUpdateCanvases. " +
+                             "Check that MapContent has a non-zero size in the layout.");
+            return;
+        }
+
+        isInitialized = true;
+        Debug.Log($"[MapNav] Initialized — contentOriginalSize: {contentOriginalSize} | viewportSize: {viewportRect.rect.size}");
+    }
+
+    private void EnsureInitialized()
+    {
+        if (!isInitialized) TryInitializeSize();
+    }
+
+    // ============================================
+    // PUBLIC API
+    // ============================================
+
+    /// <summary>
+    /// Called by MapUI when the map opens — centers view on a pin.
+    /// contentLocalPoint is the pin's anchoredPosition inside MapContent.
+    /// The transform update is deferred to LateUpdate to prevent the Canvas
+    /// layout system from overwriting the values in the same frame.
+    /// </summary>
     public void FocusOn(Vector2 contentLocalPoint, float zoom)
     {
+        if (mapContent == null) return;
+
+        EnsureInitialized();
+
+        if (!isInitialized)
+        {
+            Debug.LogWarning("[MapNav] FocusOn called but size could not be determined yet.");
+            return;
+        }
+
         pendingFocusPoint = contentLocalPoint;
         pendingFocusZoom  = zoom;
         hasPendingFocus   = true;
-        StopAllCoroutines();
-        StartCoroutine(ApplyFocusAfterLayout());
+
+        Debug.Log($"[MapNav] FocusOn queued — point: {contentLocalPoint} | zoom: {zoom}");
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // COROUTINE
-    // ══════════════════════════════════════════════════════════════════════
-
-    private IEnumerator ApplyFocusAfterLayout()
+    private void ApplyFocusInternal(Vector2 contentLocalPoint, float zoom)
     {
-        yield return null;
-        yield return null;
-        Canvas.ForceUpdateCanvases();
+        float   clampedZoom   = Mathf.Clamp(zoom, navigator.MinZoom, navigator.MaxZoom);
+        Vector2 initialOffset = -contentLocalPoint * clampedZoom;
 
-        Vector2 viewport = viewportRect.rect.size;
-        mapImageSize = mapContent != null ? mapContent.rect.size : viewport;
-        computedMinZoom = ComputeMinZoom(viewport, mapImageSize);
-
-        navigator.MinZoom = computedMinZoom;
-        navigator.MaxZoom = maxZoom;
-
-        float targetZoom = Mathf.Clamp(pendingFocusZoom, computedMinZoom, maxZoom);
-
-        // ── VERBOSE DEBUG — read this in the console ──────────────────
-        Debug.Log($"[MapNav] === FOCUS DEBUG ===");
-        Debug.Log($"[MapNav] viewportRect name: '{viewportRect.name}'");
-        Debug.Log($"[MapNav] mapContent name:   '{(mapContent != null ? mapContent.name : "NULL")}'");
-        Debug.Log($"[MapNav] viewport size:     {viewport}");
-        Debug.Log($"[MapNav] mapImage size:     {mapImageSize}");
-        Debug.Log($"[MapNav] computedMinZoom:   {computedMinZoom:F4}");
-        Debug.Log($"[MapNav] pendingFocusZoom:  {pendingFocusZoom:F4}");
-        Debug.Log($"[MapNav] targetZoom:        {targetZoom:F4}");
-        Debug.Log($"[MapNav] pendingFocusPoint: {pendingFocusPoint}");
-        // ─────────────────────────────────────────────────────────────
-
-        if (!hasPendingFocus)
-        {
-            Debug.Log("[MapNav] hasPendingFocus was false — aborting");
-            yield break;
-        }
-        hasPendingFocus = false;
-
-        Vector2 centeredOffset = -pendingFocusPoint * targetZoom;
-        navigator.Reset(centeredOffset, targetZoom);
-        navigator.ClampToBounds(viewport, mapImageSize);
+        navigator.Reset(initialOffset, clampedZoom);
+        navigator.ClampToBounds(viewportRect.rect.size, contentOriginalSize);
         ApplyToRectTransform();
 
-        Debug.Log($"[MapNav] Applied — ZoomScale: {navigator.ZoomScale:F4} | PanOffset: {navigator.PanOffset} | localScale: {mapContent?.localScale}");
+        Debug.Log($"[MapNav] FocusOn applied — zoom: {clampedZoom} | offset: {navigator.PanOffset} | mapContent.localScale: {mapContent.localScale}");
     }
 
-    private float ComputeMinZoom(Vector2 viewport, Vector2 mapSize)
-    {
-        if (mapSize.x <= 0 || mapSize.y <= 0) return 1f;
-        float scaleX = viewport.x / mapSize.x;
-        float scaleY = viewport.y / mapSize.y;
-        return Mathf.Max(scaleX, scaleY);
-    }
-
-    // ══════════════════════════════════════════════════════════════════════
-    // INPUT
-    // ══════════════════════════════════════════════════════════════════════
+    // ============================================
+    // INPUT CALLBACKS
+    // ============================================
 
     private void OnDragStarted(InputAction.CallbackContext ctx)
     {
+        EnsureInitialized();
         navigator.BeginDrag(GetPointerCanvasPosition());
         isDragActive = true;
     }
@@ -149,8 +179,10 @@ public class MapNavigationController : MonoBehaviour
 
     private void OnZoom(InputAction.CallbackContext ctx)
     {
+        EnsureInitialized();
+        if (!isInitialized) return;
+
         Vector2 scrollDelta = ctx.ReadValue<Vector2>();
-        Debug.Log($"[MapNav] Scroll input: {scrollDelta}");
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             viewportRect,
@@ -160,23 +192,30 @@ public class MapNavigationController : MonoBehaviour
         );
 
         navigator.ApplyScrollZoom(scrollDelta.y, localPoint, viewportRect.rect.size);
-        navigator.ClampToBounds(viewportRect.rect.size, mapImageSize);
+        navigator.ClampToBounds(viewportRect.rect.size, contentOriginalSize);
         ApplyToRectTransform();
-
-        Debug.Log($"[MapNav] After scroll — ZoomScale: {navigator.ZoomScale:F4} | mapImageSize: {mapImageSize}");
     }
+
+    // ============================================
+    // HELPERS
+    // ============================================
 
     private Vector2 GetPointerCanvasPosition()
     {
         Vector2 screenPos = inputActions.PlayerInputs.MapPoint.ReadValue<Vector2>();
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            viewportRect, screenPos, null, out Vector2 localPoint);
+            viewportRect,
+            screenPos,
+            null,
+            out Vector2 localPoint
+        );
         return localPoint;
     }
 
     private void ApplyToRectTransform()
     {
         if (mapContent == null) return;
+
         mapContent.localScale       = new Vector3(navigator.ZoomScale, navigator.ZoomScale, 1f);
         mapContent.anchoredPosition = navigator.PanOffset;
     }

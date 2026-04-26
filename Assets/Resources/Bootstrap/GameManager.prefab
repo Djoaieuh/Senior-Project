@@ -117,10 +117,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapNavigationController
   mapContent: {fileID: 1257202022014501114}
-  minZoom: 1
   maxZoom: 10
   zoomStep: 0.15
-  defaultOpenZoom: 5
+  openZoom: 5
 --- !u!1 &1039966015006617152
 GameObject:
   m_ObjectHideFlags: 0
