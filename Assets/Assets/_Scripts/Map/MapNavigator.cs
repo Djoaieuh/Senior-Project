@@ -1,14 +1,15 @@
 using UnityEngine;
 
 /// <summary>
-/// Pure logic class for map pan/zoom math.
-/// No MonoBehaviour - driven by MapNavigationController.
+/// Pure logic class for map pan/zoom math. No MonoBehaviour.
+/// MinZoom and MaxZoom are set by MapNavigationController after it
+/// computes the correct fit-to-viewport scale.
 /// </summary>
 public class MapNavigator
 {
     public float MinZoom  { get; set; } = 1f;
-    public float MaxZoom  { get; set; } = 3.0f;
-    public float ZoomStep { get; set; } = 0.15f;
+    public float MaxZoom  { get; set; } = 4f;
+    public float ZoomStep { get; set; } = 0.2f;
 
     public Vector2 PanOffset { get; private set; }
     public float   ZoomScale { get; private set; } = 1f;
@@ -19,8 +20,8 @@ public class MapNavigator
 
     public void Reset(Vector2 initialOffset, float initialZoom)
     {
-        PanOffset  = initialOffset;
         ZoomScale  = Mathf.Clamp(initialZoom, MinZoom, MaxZoom);
+        PanOffset  = initialOffset;
         isDragging = false;
     }
 
@@ -37,15 +38,15 @@ public class MapNavigator
         PanOffset = dragStartOffset + (pointerPosition - dragStartPointer);
     }
 
-    public void EndDrag()
-    {
-        isDragging = false;
-    }
+    public void EndDrag() => isDragging = false;
 
-    public void ClampToBounds(Vector2 viewportSize, Vector2 contentOriginalSize)
+    /// <summary>
+    /// Clamps pan so the player never scrolls past the map edges.
+    /// mapImageSize = actual pixel size of the map image RectTransform (NOT viewport).
+    /// </summary>
+    public void ClampToBounds(Vector2 viewportSize, Vector2 mapImageSize)
     {
-        Vector2 scaledSize = contentOriginalSize * ZoomScale;
-
+        Vector2 scaledSize = mapImageSize * ZoomScale;
         float maxX = Mathf.Max(0f, (scaledSize.x - viewportSize.x) / 2f);
         float maxY = Mathf.Max(0f, (scaledSize.y - viewportSize.y) / 2f);
 
@@ -61,13 +62,11 @@ public class MapNavigator
 
         float oldZoom = ZoomScale;
         float newZoom = Mathf.Clamp(ZoomScale + scrollDelta * ZoomStep, MinZoom, MaxZoom);
-
         if (Mathf.Approximately(oldZoom, newZoom)) return;
 
         // Keep the point under the cursor fixed while zooming
         Vector2 pointerOnContent = (pointerViewportLocal - PanOffset) / oldZoom;
         PanOffset = pointerViewportLocal - pointerOnContent * newZoom;
-
         ZoomScale = newZoom;
     }
 }

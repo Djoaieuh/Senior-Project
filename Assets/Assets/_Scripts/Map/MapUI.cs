@@ -9,9 +9,9 @@ using System.Collections.Generic;
 /// </summary>
 public class MapUI : MonoBehaviour
 {
-    // ============================================
+    // ══════════════════════════════════════════════════════════════════════
     // INSPECTOR REFERENCES
-    // ============================================
+    // ══════════════════════════════════════════════════════════════════════
 
     [Header("Pins Container")]
     [SerializeField] private Transform pinsContainer;
@@ -37,18 +37,17 @@ public class MapUI : MonoBehaviour
 
     [Header("Navigation")]
     [SerializeField] private MapNavigationController navigationController;
-    [SerializeField] private float openZoom = 2.0f;
 
-    // ============================================
+    // ══════════════════════════════════════════════════════════════════════
     // RUNTIME STATE
-    // ============================================
+    // ══════════════════════════════════════════════════════════════════════
 
     private List<MapPin> allPins = new List<MapPin>();
     private MapPin selectedPin;
 
-    // ============================================
+    // ══════════════════════════════════════════════════════════════════════
     // LIFECYCLE
-    // ============================================
+    // ══════════════════════════════════════════════════════════════════════
 
     private void Awake()
     {
@@ -87,9 +86,9 @@ public class MapUI : MonoBehaviour
             closeMapButton.onClick.AddListener(() => MapManager._instance?.CloseMap());
     }
 
-    // ============================================
+    // ══════════════════════════════════════════════════════════════════════
     // REFRESH
-    // ============================================
+    // ══════════════════════════════════════════════════════════════════════
 
     public void RefreshAll()
     {
@@ -130,19 +129,21 @@ public class MapUI : MonoBehaviour
         {
             if (pin.locationData != null && pin.locationData.sceneName == currentScene)
             {
+                // Use the pin's anchored position inside MapContent as the focus target.
+                // DefaultOpenZoom is set on the controller in the inspector.
                 Vector2 pinLocalPos = ((RectTransform)pin.transform).anchoredPosition;
-                navigationController.FocusOn(pinLocalPos, openZoom);
+                navigationController.FocusOn(pinLocalPos, navigationController.DefaultOpenZoom);
                 return;
             }
         }
 
-        // Fallback: center at default zoom if no matching pin found
-        navigationController.FocusOn(Vector2.zero, openZoom);
+        // Fallback: center with default zoom if no matching pin
+        navigationController.FocusOn(Vector2.zero, navigationController.DefaultOpenZoom);
     }
 
-    // ============================================
+    // ══════════════════════════════════════════════════════════════════════
     // PIN CLICK
-    // ============================================
+    // ══════════════════════════════════════════════════════════════════════
 
     private void OnPinClicked(MapPin pin)
     {
@@ -207,17 +208,20 @@ public class MapUI : MonoBehaviour
     {
         if (travelButton == null) return;
 
-        bool isUnlocked    = mapData != null && location.IsUnlocked(mapData);
-        bool reqsMet       = mapData != null && location.AreRequirementsMet(mapData);
+        bool isUnlocked     = mapData != null && location.IsUnlocked(mapData);
+        bool reqsMet        = mapData != null && location.AreRequirementsMet(mapData);
         bool isCurrentScene = location.sceneName ==
             UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
 
-        bool canTravel = (isUnlocked || reqsMet) && !isCurrentScene;
+        // Shops don't load a new scene — never show "You are here" for them
+        bool isShop = location.locationType == LocationType.Shop;
+
+        bool canTravel = (isUnlocked || reqsMet) && (!isCurrentScene || isShop);
         travelButton.interactable = canTravel;
 
         if (travelButtonText != null)
         {
-            if (isCurrentScene)
+            if (!isShop && isCurrentScene)
                 travelButtonText.text = "You are here";
             else if (isUnlocked)
                 travelButtonText.text = GetTravelLabel(location.locationType);
@@ -246,9 +250,9 @@ public class MapUI : MonoBehaviour
         return "Unlock";
     }
 
-    // ============================================
+    // ══════════════════════════════════════════════════════════════════════
     // BUTTONS
-    // ============================================
+    // ══════════════════════════════════════════════════════════════════════
 
     private void OnTravelClicked()
     {

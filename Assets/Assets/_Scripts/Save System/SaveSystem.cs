@@ -60,6 +60,14 @@ public static class SaveSystem
             var (ids, flags) = playerData.Map.ToSaveData();
             data.unlockedLocationIDs = ids;
             data.locationFlags       = flags;
+            
+            // Serialize shop states
+            if (ShopRegistry._instance != null)
+                data.shopStates = ShopRegistry._instance.GetAllSaveData();
+            
+            // Global timer
+            if (GlobalTimer.Instance != null)
+                data.globalTimerSeconds = GlobalTimer.Instance.GetSaveValue();
 
             string json = JsonConvert.SerializeObject(data, JsonSettings);
             File.WriteAllText(SaveFilePath, json);
@@ -127,6 +135,12 @@ public static class SaveSystem
 
         // Map
         playerData.Map.LoadFromSaveData(data.unlockedLocationIDs, data.locationFlags);
+        
+        // Load shop states
+        ShopRegistry._instance?.LoadFromSaveData(data.shopStates);
+        
+        // Global timer
+        GlobalTimer.Instance?.LoadSaveValue(data.globalTimerSeconds);
     }
 
     private static void ApplyEquippedGear(EquippedGearSaveData saveData, PlayerData playerData)

@@ -117,9 +117,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapNavigationController
   mapContent: {fileID: 1257202022014501114}
-  maxZoom: 3
+  minZoom: 1
+  maxZoom: 10
   zoomStep: 0.15
-  openZoom: 2
+  defaultOpenZoom: 5
 --- !u!1 &1039966015006617152
 GameObject:
   m_ObjectHideFlags: 0
@@ -274,6 +275,8 @@ GameObject:
   - component: {fileID: 5522604259053057671}
   - component: {fileID: 206949445578063875}
   - component: {fileID: 7075423512272940375}
+  - component: {fileID: 8163332428886909989}
+  - component: {fileID: 1241461023769804799}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -448,6 +451,31 @@ MonoBehaviour:
   mapRoot: {fileID: 1257991982552395166}
   mapUI: {fileID: 7297558500907955537}
   showDebugLogs: 1
+--- !u!114 &8163332428886909989
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4188327741798290793}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 995ca2e4f4e082142b541874b789598c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShopRegistry
+--- !u!114 &1241461023769804799
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4188327741798290793}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75c0f7b5c4dc32642bdeaaf66999c214, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GlobalTimer
+  showDebugLogs: 0
 --- !u!1 &5848987070093614818
 GameObject:
   m_ObjectHideFlags: 0
@@ -576,7 +604,6 @@ MonoBehaviour:
   closeMapButton: {fileID: 0}
   currentLocationText: {fileID: 0}
   navigationController: {fileID: 0}
-  openZoom: 2
 --- !u!1 &6814650740930697174
 GameObject:
   m_ObjectHideFlags: 0

@@ -89,29 +89,31 @@ public class MapManager : MonoBehaviour
     public void TravelTo(LocationData location)
     {
         if (location == null) return;
-
+ 
         MapData mapData = GameManager._instance.Map;
-
+ 
         if (!location.IsUnlocked(mapData))
         {
             bool unlocked = location.TryUnlock(mapData);
             if (!unlocked)
             {
-                Debug.LogWarning($"[MapManager] Cannot travel to {location.locationName} - requirements not met!");
+                Debug.LogWarning($"[MapManager] Cannot travel to {location.locationName}");
                 return;
             }
-            if (showDebugLogs) Debug.Log($"[MapManager] Unlocked: {location.locationName}");
         }
-
+ 
         switch (location.locationType)
         {
             case LocationType.FishingSpot:
-            case LocationType.Shop:
                 TravelToScene(location);
                 break;
-
+ 
+            case LocationType.Shop:
+                OpenShopOverlay(location);  // <-- NEW: no scene load
+                break;
+ 
             case LocationType.Basic:
-                Debug.Log($"[MapManager] Basic location '{location.locationName}' - not yet implemented");
+                Debug.Log($"[MapManager] Basic location — not yet implemented");
                 break;
         }
     }
@@ -129,6 +131,25 @@ public class MapManager : MonoBehaviour
         GameManager._instance.SaveGame();
         CloseMap();
         SceneManager.LoadScene(location.sceneName);
+    }
+    
+    private void OpenShopOverlay(LocationData location)
+    {
+        ShopData shopData = location as ShopData;
+        if (shopData == null)
+        {
+            Debug.LogError($"[MapManager] Location '{location.locationName}' is LocationType.Shop but its LocationData is not a ShopData ScriptableObject!");
+            return;
+        }
+ 
+        if (ShopRegistry._instance == null)
+        {
+            Debug.LogError("[MapManager] No ShopRegistry found on GameManager!");
+            return;
+        }
+ 
+        ShopRegistry._instance.OpenShop(shopData);
+        if (showDebugLogs) Debug.Log($"[MapManager] Opened shop: {shopData.shopName}");
     }
 
     // ============================================

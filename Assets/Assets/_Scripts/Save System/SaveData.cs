@@ -14,10 +14,15 @@ public class SaveData
 
     // Player
     public int money;
+    
+    public double globalTimerSeconds = 0.0;
 
     // Location
     public string currentLocationID;
     public string currentSceneName;
+    
+    // Shops
+    public List<ShopSaveData> shopStates = new List<ShopSaveData>();
 
     // Inventory - TypeNameHandling handles polymorphism
     [JsonProperty(TypeNameHandling = TypeNameHandling.All)]
