@@ -18,7 +18,7 @@ MonoBehaviour:
   locationType: 0
   sceneName: 
   unlockRequirements: []
-  locationIcon: {fileID: 0}
+  locationIcon: {fileID: 21300000, guid: 05b70736f9a9b51428356fb3cab64fc0, type: 3}
   previewImage: {fileID: 0}
   shopName: Shop
   shopDescription: 

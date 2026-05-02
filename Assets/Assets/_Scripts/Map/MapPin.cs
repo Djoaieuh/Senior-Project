@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -26,7 +27,7 @@ public class MapPin : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler,
 
     // Set by MapManager
     private System.Action<MapPin> onPinClicked;
-
+    
     public void Initialize(System.Action<MapPin> clickCallback)
     {
         onPinClicked = clickCallback;

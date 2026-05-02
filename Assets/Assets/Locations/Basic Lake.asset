@@ -18,5 +18,5 @@ MonoBehaviour:
   locationType: 0
   sceneName: Basic Lake
   unlockRequirements: []
-  locationIcon: {fileID: 0}
+  locationIcon: {fileID: 21300000, guid: 5809d28097e3f7649b94c70a03d73ed9, type: 3}
   previewImage: {fileID: 0}
