@@ -2,289 +2,115 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
-using System.Collections.Generic;
 
 /// <summary>
-/// Drives a single trade row in the shop list.
+/// Controls one trade row in the shop UI.
+/// Prefab: TradeRowPrefab
 ///
-/// NAMING CONVENTIONS for child objects:
-///   TradeNameText      — TextMeshProUGUI — trade label
-///   GiveSection        — Transform       — parent for "give" item icons + money
-///   ReceiveSection     — Transform       — parent for "receive" item icons + money
-///   TradeButton        — Button          — click to initiate trade
-///   TradeButtonText    — TextMeshProUGUI — button label text
-///   StockText          — TextMeshProUGUI — shows remaining stock / restock timer
-///   LockedOverlay      — GameObject      — shown when trade is locked
-///   ConditionHintText  — TextMeshProUGUI — shows lock reason
-///   ItemIconPrefab     — auto-loaded from Resources/Prefabs/TradeItemIcon
+/// Layout (left → right):
+///   [GiveSlotsContainer]  [ArrowImage]  [ReceiveSlotsContainer]  [StockText]  [TradeButton]
 /// </summary>
 public class TradeRowUI : MonoBehaviour
 {
-    [Header("Auto-Found Children (name them correctly)")]
-    [SerializeField] private TextMeshProUGUI tradeNameText;
-    [SerializeField] private Transform       giveSection;
-    [SerializeField] private Transform       receiveSection;
-    [SerializeField] private Button          tradeButton;
-    [SerializeField] private TextMeshProUGUI tradeButtonText;
-    [SerializeField] private TextMeshProUGUI stockText;
-    [SerializeField] private GameObject      lockedOverlay;
-    [SerializeField] private TextMeshProUGUI conditionHintText;
+    [Header("Give Side")]
+    [Tooltip("Horizontal Layout Group — ItemSlot prefabs are spawned here")]
+    public Transform giveSlotsContainer;
 
-    [Header("Prefabs (auto-loaded if not assigned)")]
-    [SerializeField] private GameObject itemIconPrefab;
+    [Header("Receive Side")]
+    [Tooltip("Horizontal Layout Group — ItemSlot prefabs are spawned here")]
+    public Transform receiveSlotsContainer;
 
-    [Header("Colors")]
-    [SerializeField] private Color canTradeColor   = new Color(0.2f, 0.8f, 0.4f);
-    [SerializeField] private Color cannotTradeColor = new Color(0.5f, 0.5f, 0.5f);
-    [SerializeField] private Color outOfStockColor  = new Color(0.9f, 0.5f, 0.1f);
+    [Header("Trade Button")]
+    public Button tradeButton;
+    public TextMeshProUGUI tradeButtonText;
 
-    [Header("Debug")]
-    [SerializeField] private bool showAutoFindLogs = false;
-
-    // ── Runtime ────────────────────────────────────────────────────────────
-    private TradeRuntimeState currentState;
-    private Action<TradeRuntimeState> onClickCallback;
-    private readonly List<GameObject> spawnedIcons = new List<GameObject>();
+    // ── Set by ShopUI ──────────────────────────────────────────────────────
+    private TradeData tradeData;
+    private Action<TradeData> onTradeClicked;
 
     // ══════════════════════════════════════════════════════════════════════
     // SETUP
     // ══════════════════════════════════════════════════════════════════════
 
-    private void Awake()
-    {
-        AutoFindReferences();
-    }
-
     /// <summary>
-    /// Called by ShopUI to configure this row.
+    /// Called by ShopUI for every visible trade on the current page.
     /// </summary>
-    public void Setup(TradeRuntimeState state, Action<TradeRuntimeState> onClick)
+    /// <param name="state">Evaluated runtime state of this trade.</param>
+    /// <param name="coinSprite">Sprite to use for money slots.</param>
+    /// <param name="itemSlotPrefab">Prefab to instantiate for each slot.</param>
+    /// <param name="callback">Invoked when the player clicks Trade.</param>
+    public void Setup(TradeRuntimeState state, Sprite coinSprite, GameObject itemSlotPrefab, Action<TradeData> callback)
     {
-        currentState    = state;
-        onClickCallback = onClick;
-        Refresh();
+        tradeData      = state.trade;
+        onTradeClicked = callback;
+
+        BuildSlots(state.trade, coinSprite, itemSlotPrefab);
+        SetupButton(state);
     }
 
-    public void Refresh()
+    // ══════════════════════════════════════════════════════════════════════
+    // PRIVATE HELPERS
+    // ══════════════════════════════════════════════════════════════════════
+
+    private void BuildSlots(TradeData trade, Sprite coinSprite, GameObject slotPrefab)
     {
-        TradeData trade = currentState.trade;
+        ClearContainer(giveSlotsContainer);
+        ClearContainer(receiveSlotsContainer);
 
-        // ── Name ──────────────────────────────────────────────────────
-        if (tradeNameText != null)
-            tradeNameText.text = trade.tradeName;
+        // ── Give side ──────────────────────────────────────────────────
+        if (trade.giveMoney > 0)
+            SpawnSlot(giveSlotsContainer, coinSprite, trade.giveMoney.ToString(), slotPrefab);
 
-        // ── Give / Receive sections ───────────────────────────────────
-        PopulateSection(giveSection,    trade.giveItems,    trade.giveMoney);
-        PopulateSection(receiveSection, trade.receiveItems, trade.receiveMoney);
-
-        // ── Lock state ────────────────────────────────────────────────
-        bool locked = !currentState.isUnlocked;
-        if (lockedOverlay != null)
-            lockedOverlay.SetActive(locked);
-
-        if (conditionHintText != null)
+        foreach (var entry in trade.giveItems)
         {
-            if (locked)
-            {
-                conditionHintText.gameObject.SetActive(true);
-                conditionHintText.text = BuildConditionHint(trade);
-            }
-            else
-            {
-                conditionHintText.gameObject.SetActive(false);
-            }
+            if (entry.item == null) continue;
+            Sprite icon = MasterItemDatabase.Instance != null
+                ? MasterItemDatabase.Instance.GetIcon(entry.item.itemID)
+                : null;
+            SpawnSlot(giveSlotsContainer, icon, $"x{entry.quantity}", slotPrefab);
         }
 
-        // ── Stock text ────────────────────────────────────────────────
-        if (stockText != null)
+        // ── Receive side ───────────────────────────────────────────────
+        if (trade.receiveMoney > 0)
+            SpawnSlot(receiveSlotsContainer, coinSprite, trade.receiveMoney.ToString(), slotPrefab);
+
+        foreach (var entry in trade.receiveItems)
         {
-            if (!trade.hasStockLimit)
-            {
-                stockText.gameObject.SetActive(false);
-            }
-            else
-            {
-                stockText.gameObject.SetActive(true);
-                string timer = FormatFishingTime(currentState.restockSecondsRemaining);
-                stockText.text = $"Restocks in {timer} (fishing time)";
-            }
-        }
-
-        // ── Button ────────────────────────────────────────────────────
-        if (tradeButton != null)
-        {
-            tradeButton.interactable = currentState.canExecute;
-
-            ColorBlock cb = tradeButton.colors;
-            if (!currentState.isInStock)
-                cb.normalColor = outOfStockColor;
-            else if (currentState.canExecute)
-                cb.normalColor = canTradeColor;
-            else
-                cb.normalColor = cannotTradeColor;
-            tradeButton.colors = cb;
-        }
-
-        if (tradeButtonText != null)
-        {
-            if (!currentState.isUnlocked)         tradeButtonText.text = "Locked";
-            else if (!currentState.isInStock)     tradeButtonText.text = "Out of Stock";
-            else if (!currentState.canAfford)     tradeButtonText.text = "Can't Afford";
-            else                                  tradeButtonText.text = "Trade";
-        }
-    }
-    
-    private string FormatFishingTime(double seconds)
-    {
-        System.TimeSpan t = System.TimeSpan.FromSeconds(seconds);
-        if (t.TotalHours >= 1) return $"{(int)t.TotalHours}h {t.Minutes}m";
-        if (t.TotalMinutes >= 1) return $"{(int)t.TotalMinutes}m {t.Seconds}s";
-        return $"{(int)t.TotalSeconds}s";
-    }
-
-    // ══════════════════════════════════════════════════════════════════════
-    // BUTTON CLICK
-    // ══════════════════════════════════════════════════════════════════════
-
-    public void OnTradeButtonClicked()
-    {
-        onClickCallback?.Invoke(currentState);
-    }
-
-    // ══════════════════════════════════════════════════════════════════════
-    // SECTION POPULATE
-    // ══════════════════════════════════════════════════════════════════════
-
-    private void PopulateSection(Transform section, List<TradeItemEntry> items, int money)
-    {
-        if (section == null) return;
-
-        // Clear old icons
-        foreach (var go in spawnedIcons)
-            if (go != null) Destroy(go);
-        spawnedIcons.Clear();
-
-        // Money entry
-        if (money > 0)
-            SpawnMoneyIcon(section, money);
-
-        // Item entries
-        foreach (var entry in items)
-            SpawnItemIcon(section, entry);
-    }
-
-    private void SpawnItemIcon(Transform parent, TradeItemEntry entry)
-    {
-        if (entry.item == null) return;
-        if (itemIconPrefab == null) return;
-
-        GameObject icon = Instantiate(itemIconPrefab, parent);
-        spawnedIcons.Add(icon);
-
-        TradeItemIconUI iconUI = icon.GetComponent<TradeItemIconUI>();
-        if (iconUI != null)
-            iconUI.Setup(entry.item.icon, entry.item.itemName, entry.quantity);
-    }
-
-    private void SpawnMoneyIcon(Transform parent, int amount)
-    {
-        if (itemIconPrefab == null) return;
-
-        GameObject icon = Instantiate(itemIconPrefab, parent);
-        spawnedIcons.Add(icon);
-
-        TradeItemIconUI iconUI = icon.GetComponent<TradeItemIconUI>();
-        if (iconUI != null)
-            iconUI.SetupMoney(amount);
-    }
-
-    // ══════════════════════════════════════════════════════════════════════
-    // HELPERS
-    // ══════════════════════════════════════════════════════════════════════
-
-    private string BuildConditionHint(TradeData trade)
-    {
-        var hints = new System.Text.StringBuilder();
-        string logicLabel = trade.unlockConditions.logic == ConditionGroupLogic.All ? "AND" : "OR";
-
-        List<ShopUnlockCondition> conditions = trade.unlockConditions.conditions;
-        for (int i = 0; i < conditions.Count; i++)
-        {
-            hints.Append(conditions[i].GetDescription());
-            if (i < conditions.Count - 1)
-                hints.Append($" {logicLabel} ");
-        }
-        return hints.ToString();
-    }
-
-    private string FormatTime(System.TimeSpan span)
-    {
-        if (span.TotalHours >= 1) return $"{(int)span.TotalHours}h {span.Minutes}m";
-        if (span.TotalMinutes >= 1) return $"{(int)span.TotalMinutes}m {span.Seconds}s";
-        return $"{span.Seconds}s";
-    }
-
-    // ══════════════════════════════════════════════════════════════════════
-    // AUTO-FIND
-    // ══════════════════════════════════════════════════════════════════════
-
-    private void AutoFindReferences()
-    {
-        AutoFindTMP(ref tradeNameText,    "TradeNameText");
-        AutoFindTransform(ref giveSection,    "GiveSection");
-        AutoFindTransform(ref receiveSection, "ReceiveSection");
-        AutoFindButton(ref tradeButton,   "TradeButton");
-        AutoFindTMP(ref tradeButtonText,  "TradeButtonText");
-        AutoFindTMP(ref stockText,        "StockText");
-        AutoFindGO(ref lockedOverlay,     "LockedOverlay");
-        AutoFindTMP(ref conditionHintText,"ConditionHintText");
-
-        if (tradeButton != null)
-            tradeButton.onClick.AddListener(OnTradeButtonClicked);
-
-        if (itemIconPrefab == null)
-        {
-            itemIconPrefab = Resources.Load<GameObject>("Prefabs/TradeItemIcon");
-            if (showAutoFindLogs && itemIconPrefab != null)
-                Debug.Log("[TradeRowUI] Auto-loaded TradeItemIcon prefab");
+            if (entry.item == null) continue;
+            Sprite icon = MasterItemDatabase.Instance != null
+                ? MasterItemDatabase.Instance.GetIcon(entry.item.itemID)
+                : null;
+            SpawnSlot(receiveSlotsContainer, icon, $"x{entry.quantity}", slotPrefab);
         }
     }
 
-    private void AutoFindTMP(ref TextMeshProUGUI f, string n)
+    private void SetupButton(TradeRuntimeState state)
     {
-        if (f != null) return;
-        Transform t = FindDeep(transform, n);
-        if (t != null) f = t.GetComponent<TextMeshProUGUI>();
+        tradeButton.interactable = state.canExecute;
+        tradeButton.onClick.RemoveAllListeners();
+        tradeButton.onClick.AddListener(() => onTradeClicked?.Invoke(tradeData));
+
+        if (!state.isUnlocked)
+            tradeButtonText.text = "Locked";
+        else if (!state.isInStock)
+            tradeButtonText.text = "Sold Out";
+        else if (!state.canAfford)
+            tradeButtonText.text = "Can't Afford";
+        else
+            tradeButtonText.text = "Trade";
     }
 
-    private void AutoFindTransform(ref Transform f, string n)
+    private void SpawnSlot(Transform container, Sprite sprite, string label, GameObject slotPrefab)
     {
-        if (f != null) return;
-        f = FindDeep(transform, n);
+        GameObject go  = Instantiate(slotPrefab, container);
+        ItemSlotUI slot = go.GetComponent<ItemSlotUI>();
+        if (slot != null)
+            slot.Setup(sprite, label);
     }
 
-    private void AutoFindButton(ref Button f, string n)
+    private void ClearContainer(Transform container)
     {
-        if (f != null) return;
-        Transform t = FindDeep(transform, n);
-        if (t != null) f = t.GetComponent<Button>();
-    }
-
-    private void AutoFindGO(ref GameObject f, string n)
-    {
-        if (f != null) return;
-        Transform t = FindDeep(transform, n);
-        if (t != null) { f = t.gameObject; f.SetActive(false); }
-    }
-
-    private Transform FindDeep(Transform root, string name)
-    {
-        foreach (Transform child in root)
-        {
-            if (child.name == name) return child;
-            Transform found = FindDeep(child, name);
-            if (found != null) return found;
-        }
-        return null;
+        foreach (Transform child in container)
+            Destroy(child.gameObject);
     }
 }

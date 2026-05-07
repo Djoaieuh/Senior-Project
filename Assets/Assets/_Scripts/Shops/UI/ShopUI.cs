@@ -4,41 +4,35 @@ using TMPro;
 using System.Collections.Generic;
 
 /// <summary>
-/// Drives the shop overlay UI. Lives on the shop canvas root.
-/// AUTO-FINDS child elements by name — a designer just needs to name things correctly.
-///
-/// NAMING CONVENTIONS:
-///   ShopNameText       — TextMeshProUGUI — shop title
-///   ShopDescText       — TextMeshProUGUI — shop subtitle / description
-///   ShopIcon           — Image           — shop portrait icon
-///   PlayerMoneyText    — TextMeshProUGUI — displays player's coin balance
-///   TradeListContainer — Transform       — scrollable list parent for trade rows
-///   CloseButton        — Button          — closes the shop
-///   ConfirmPanel       — GameObject      — confirmation popup (child of this canvas)
+/// Main shop panel controller. Attach directly to ShopPanel.
+/// ShopPanel must stay active in the scene at all times —
+/// visibility is handled via CanvasGroup (alpha/interactable), not SetActive.
 /// </summary>
 public class ShopUI : MonoBehaviour
 {
-    // ── Auto-found references ──────────────────────────────────────────────
-    [Header("Auto-Found (Name children correctly — see summary above)")]
-    [SerializeField] private TextMeshProUGUI shopNameText;
-    [SerializeField] private TextMeshProUGUI shopDescText;
-    [SerializeField] private Image           shopIcon;
-    [SerializeField] private TextMeshProUGUI playerMoneyText;
-    [SerializeField] private Transform       tradeListContainer;
-    [SerializeField] private Button          closeButton;
-    [SerializeField] private GameObject      confirmPanel;
+    [Header("Shop Header")]
+    public TextMeshProUGUI shopNameText;
 
-    [Header("Prefabs")]
-    [Tooltip("The row prefab spawned for each trade. Must have a TradeRowUI component.")]
-    [SerializeField] private GameObject tradeRowPrefab;
+    [Header("Trade Rows")]
+    [Tooltip("Parent transform for spawned TradeRow prefabs (Vertical Layout Group)")]
+    public Transform tradeRowContainer;
+    public GameObject tradeRowPrefab;
+    public GameObject itemSlotPrefab;
+    public Sprite coinSprite;
 
-    [Header("Debug")]
-    [SerializeField] private bool showAutoFindLogs = true;
+    [Header("Pagination")]
+    public Button prevPageButton;
+    public Button nextPageButton;
+    public TextMeshProUGUI pageText;
+
+    // ── Constants ──────────────────────────────────────────────────────────
+    private const int TradesPerPage = 6;
 
     // ── Runtime ────────────────────────────────────────────────────────────
-    private ShopManager activeManager;
-    private readonly List<TradeRowUI> spawnedRows = new List<TradeRowUI>();
-    private TradeRuntimeState pendingTrade;
+    private CanvasGroup canvasGroup;
+    private ShopManager currentShop;
+    private List<TradeRuntimeState> allStates = new List<TradeRuntimeState>();
+    private int currentPage = 0;
 
     // ══════════════════════════════════════════════════════════════════════
     // LIFECYCLE
@@ -46,236 +40,104 @@ public class ShopUI : MonoBehaviour
 
     private void Awake()
     {
-        AutoFindReferences();
-        gameObject.SetActive(false);
-    }
+        canvasGroup = GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
-    private void OnEnable()
-    {
+        Hide();
+
         ShopRegistry.OnShopOpened += HandleShopOpened;
         ShopRegistry.OnShopClosed += HandleShopClosed;
     }
 
-    private void OnDisable()
+    private void OnDestroy()
     {
         ShopRegistry.OnShopOpened -= HandleShopOpened;
         ShopRegistry.OnShopClosed -= HandleShopClosed;
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    // EVENT HANDLERS
+    // SHOW / HIDE  — CanvasGroup instead of SetActive so Awake always runs
+    // ══════════════════════════════════════════════════════════════════════
+
+    private void Show()
+    {
+        canvasGroup.alpha          = 1f;
+        canvasGroup.interactable   = true;
+        canvasGroup.blocksRaycasts = true;
+    }
+
+    private void Hide()
+    {
+        canvasGroup.alpha          = 0f;
+        canvasGroup.interactable   = false;
+        canvasGroup.blocksRaycasts = false;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SHOP EVENTS
     // ══════════════════════════════════════════════════════════════════════
 
     private void HandleShopOpened(ShopManager manager)
     {
-        activeManager = manager;
-        activeManager.OnShopStateChanged += RefreshTrades;
-        gameObject.SetActive(true);
-        PopulateShopHeader();
-        RefreshTrades();
-        RefreshMoney();
+        currentShop = manager;
+        currentShop.OnShopStateChanged += Refresh;
+
+        currentPage = 0;
+        shopNameText.text = manager.ShopData.shopName;
+        Show();
+        Refresh();
     }
 
     private void HandleShopClosed()
     {
-        if (activeManager != null)
-            activeManager.OnShopStateChanged -= RefreshTrades;
-        activeManager = null;
-        gameObject.SetActive(false);
-        ClearRows();
+        if (currentShop != null)
+            currentShop.OnShopStateChanged -= Refresh;
+
+        currentShop = null;
+        Hide();
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    // POPULATE
+    // REFRESH
     // ══════════════════════════════════════════════════════════════════════
 
-    private void PopulateShopHeader()
+    private void Refresh()
     {
-        ShopData data = activeManager.ShopData;
-        if (shopNameText != null) shopNameText.text = data.shopName;
-        if (shopDescText  != null) shopDescText.text  = data.shopDescription;
-        if (shopIcon      != null)
+        if (currentShop == null) return;
+
+        allStates = currentShop.GetAllTradeStates();
+
+        int totalPages = Mathf.Max(1, Mathf.CeilToInt((float)allStates.Count / TradesPerPage));
+        currentPage = Mathf.Clamp(currentPage, 0, totalPages - 1);
+
+        prevPageButton.interactable = currentPage > 0;
+        nextPageButton.interactable = currentPage < totalPages - 1;
+        pageText.text = totalPages > 1 ? $"{currentPage + 1} / {totalPages}" : "";
+
+        foreach (Transform child in tradeRowContainer)
+            Destroy(child.gameObject);
+
+        int start = currentPage * TradesPerPage;
+        int end   = Mathf.Min(start + TradesPerPage, allStates.Count);
+
+        for (int i = start; i < end; i++)
         {
-            shopIcon.sprite = data.shopIcon;
-            shopIcon.gameObject.SetActive(data.shopIcon != null);
+            GameObject rowGO = Instantiate(tradeRowPrefab, tradeRowContainer);
+            rowGO.GetComponent<TradeRowUI>().Setup(allStates[i], coinSprite, itemSlotPrefab, OnTradeClicked);
         }
     }
 
-    private void RefreshTrades()
-    {
-        ClearRows();
-        if (tradeListContainer == null || tradeRowPrefab == null) return;
-
-        List<TradeRuntimeState> states = activeManager.GetAllTradeStates();
-        foreach (TradeRuntimeState state in states)
-        {
-            // Skip locked trades that have no conditions shown — fully hidden
-            if (!state.isUnlocked && state.trade.unlockConditions.IsAlwaysUnlocked()) continue;
-
-            GameObject rowObj = Instantiate(tradeRowPrefab, tradeListContainer);
-            TradeRowUI row    = rowObj.GetComponent<TradeRowUI>();
-
-            if (row != null)
-            {
-                row.Setup(state, OnTradeRowClicked);
-                spawnedRows.Add(row);
-            }
-        }
-    }
-
-    private void RefreshMoney()
-    {
-        if (playerMoneyText != null)
-            playerMoneyText.text = $"{GameManager._instance.Money}g";
-    }
-
     // ══════════════════════════════════════════════════════════════════════
-    // CONFIRM PANEL
+    // BUTTON CALLBACKS
     // ══════════════════════════════════════════════════════════════════════
 
-    private void OnTradeRowClicked(TradeRuntimeState state)
+    private void OnTradeClicked(TradeData trade)
     {
-        if (!state.canExecute) return;
-        pendingTrade = state;
-        ShowConfirmPanel(state);
+        currentShop?.ExecuteTrade(trade);
     }
 
-    private void ShowConfirmPanel(TradeRuntimeState state)
-    {
-        if (confirmPanel == null) return;
-
-        ShopConfirmPanel panel = confirmPanel.GetComponent<ShopConfirmPanel>();
-        if (panel != null)
-            panel.Show(state, OnConfirmTrade, OnCancelTrade);
-        else
-            confirmPanel.SetActive(true);
-    }
-
-    private void OnConfirmTrade()
-    {
-        if (activeManager == null) return;
-
-        TradeResult result = activeManager.ExecuteTrade(pendingTrade.trade);
-
-        if (result != TradeResult.Success)
-            Debug.LogWarning($"[ShopUI] Trade failed: {result}");
-
-        RefreshMoney();
-        HideConfirmPanel();
-    }
-
-    private void OnCancelTrade()
-    {
-        HideConfirmPanel();
-    }
-
-    private void HideConfirmPanel()
-    {
-        if (confirmPanel != null)
-            confirmPanel.SetActive(false);
-    }
-
-    // ══════════════════════════════════════════════════════════════════════
-    // CLOSE BUTTON
-    // ══════════════════════════════════════════════════════════════════════
-
-    public void OnCloseButtonClicked()
-    {
-        ShopRegistry._instance?.CloseShop();
-    }
-
-    // ══════════════════════════════════════════════════════════════════════
-    // HELPERS
-    // ══════════════════════════════════════════════════════════════════════
-
-    private void ClearRows()
-    {
-        foreach (var row in spawnedRows)
-            if (row != null) Destroy(row.gameObject);
-        spawnedRows.Clear();
-    }
-
-    // ══════════════════════════════════════════════════════════════════════
-    // AUTO-FIND
-    // ══════════════════════════════════════════════════════════════════════
-
-    private void AutoFindReferences()
-    {
-        AutoFindTMP(ref shopNameText,     "ShopNameText");
-        AutoFindTMP(ref shopDescText,     "ShopDescText");
-        AutoFindImg(ref shopIcon,         "ShopIcon");
-        AutoFindTMP(ref playerMoneyText,  "PlayerMoneyText");
-        AutoFindTransform(ref tradeListContainer, "TradeListContainer");
-        AutoFindButton(ref closeButton,   "CloseButton");
-        AutoFindGO(ref confirmPanel,      "ConfirmPanel");
-
-        if (closeButton != null)
-            closeButton.onClick.AddListener(OnCloseButtonClicked);
-
-        if (tradeRowPrefab == null)
-        {
-            tradeRowPrefab = Resources.Load<GameObject>("Prefabs/TradeRow");
-            if (showAutoFindLogs && tradeRowPrefab != null)
-                Debug.Log("[ShopUI] Auto-loaded TradeRow prefab from Resources/Prefabs/TradeRow");
-            else if (tradeRowPrefab == null)
-                Debug.LogWarning("[ShopUI] Could not find TradeRow prefab. Assign it in the inspector or place it at Resources/Prefabs/TradeRow");
-        }
-    }
-
-    private void AutoFindTMP(ref TextMeshProUGUI field, string childName)
-    {
-        if (field != null) return;
-        Transform t = FindDeep(transform, childName);
-        if (t != null) field = t.GetComponent<TextMeshProUGUI>();
-        if (showAutoFindLogs && field != null) Debug.Log($"[ShopUI] Auto-found {childName}");
-        else if (field == null) Debug.LogWarning($"[ShopUI] Could not find '{childName}' (TextMeshProUGUI)");
-    }
-
-    private void AutoFindImg(ref Image field, string childName)
-    {
-        if (field != null) return;
-        Transform t = FindDeep(transform, childName);
-        if (t != null) field = t.GetComponent<Image>();
-        if (showAutoFindLogs && field != null) Debug.Log($"[ShopUI] Auto-found {childName}");
-    }
-
-    private void AutoFindButton(ref Button field, string childName)
-    {
-        if (field != null) return;
-        Transform t = FindDeep(transform, childName);
-        if (t != null) field = t.GetComponent<Button>();
-        if (showAutoFindLogs && field != null) Debug.Log($"[ShopUI] Auto-found {childName}");
-    }
-
-    private void AutoFindTransform(ref Transform field, string childName)
-    {
-        if (field != null) return;
-        field = FindDeep(transform, childName);
-        if (showAutoFindLogs && field != null) Debug.Log($"[ShopUI] Auto-found {childName}");
-        else if (field == null) Debug.LogWarning($"[ShopUI] Could not find '{childName}' (Transform)");
-    }
-
-    private void AutoFindGO(ref GameObject field, string childName)
-    {
-        if (field != null) return;
-        Transform t = FindDeep(transform, childName);
-        if (t != null) field = t.gameObject;
-        if (showAutoFindLogs && field != null)
-        {
-            Debug.Log($"[ShopUI] Auto-found {childName}");
-            field.SetActive(false);
-        }
-    }
-
-    /// <summary>Recursive deep search for a child by name.</summary>
-    private Transform FindDeep(Transform root, string name)
-    {
-        foreach (Transform child in root)
-        {
-            if (child.name == name) return child;
-            Transform found = FindDeep(child, name);
-            if (found != null) return found;
-        }
-        return null;
-    }
+    public void OnPrevPage()    { currentPage--; Refresh(); }
+    public void OnNextPage()    { currentPage++; Refresh(); }
+    public void OnCloseButton() => ShopRegistry._instance?.CloseShop();
 }
